@@ -1,24 +1,22 @@
 import React from "react";
 import { Component } from "react";
 import { API } from "../../backend";
+import "../signin/signin.css";
 
 class Register extends Component {
-	constructor(props) {
-		super(props);
-		this.state = {
-			email: "",
-			password: "",
-			name: "",
-			error: "",
-			loading: false,
-		};
-	}
+	state = {
+		email: "",
+		password: "",
+		name: "",
+		error: "",
+		loading: false,
+	};
 
 	onEmailChange = e => this.setState({ email: e.target.value });
 	onPasswordChange = e => this.setState({ password: e.target.value });
 	onNameChange = e => this.setState({ name: e.target.value });
 
-	onSubmitSignIn = ev => {
+	onSubmitRegister = ev => {
 		ev.preventDefault();
 		this.setState({ loading: true });
 		fetch(`${API}/register`, {
@@ -31,14 +29,25 @@ class Register extends Component {
 			}),
 		})
 			.then(resp => resp.json())
-			.then(data => {
-				if (data.id) {
-					this.props.loadUser(data);
-					this.props.onRouteChange("home");
-				}
-				if (data.error) this.setState({ error: data.error });
+			.then(async data => {
+				console.log(data);
+				if (data.success) {
+					try {
+						window.sessionStorage.setItem("token", data.token);
+						const response = await fetch(`${API}/profile/${data.userId}`, {
+							headers: { Authorization: data.token },
+						});
+						const user = await response.json();
+						this.props.loadUser(user);
+						this.props.onRouteChange("home");
+					} catch (e) {
+						console.log(e);
+						this.setState({ error: "Cannot get user profile." });
+					}
+				} else this.setState({ error: data.error });
 				this.setState({ loading: false });
-			});
+			})
+			.catch(console.log);
 	};
 
 	render() {
@@ -54,7 +63,7 @@ class Register extends Component {
 								</label>
 								<input
 									onChange={this.onNameChange}
-									className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+									className="pa2 input-reset ba bg-transparent hover-black hover-white w-100"
 									type="text"
 									name="name"
 									id="name"
@@ -66,7 +75,7 @@ class Register extends Component {
 								</label>
 								<input
 									onChange={this.onEmailChange}
-									className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+									className="pa2 input-reset ba bg-transparent hover-black hover-white w-100"
 									type="email"
 									name="email-address"
 									id="email-address"
@@ -78,7 +87,7 @@ class Register extends Component {
 								</label>
 								<input
 									onChange={this.onPasswordChange}
-									className="b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+									className="b pa2 input-reset ba bg-transparent hover-black hover-white w-100"
 									type="password"
 									name="password"
 									id="password"
@@ -89,7 +98,7 @@ class Register extends Component {
 						</fieldset>
 						<div className="">
 							<input
-								onClick={this.onSubmitSignIn}
+								onClick={this.onSubmitRegister}
 								className="b ph3 pv2 input-reset ba b--black bg-transparent grow pointer f6 dib"
 								type="submit"
 								value="Register"

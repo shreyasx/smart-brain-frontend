@@ -8,7 +8,9 @@ import "./App.css";
 import FaceRecognition from "./components/facerecognition/facerecognition";
 import Register from "./components/register/register";
 import Signin from "./components/signin/signin";
+import Modal from "./components/modal/modal";
 import { API } from "./backend";
+import Profile from "./components/profile/profile";
 
 const initialState = {
 	input: "",
@@ -16,11 +18,14 @@ const initialState = {
 	boxes: [],
 	route: "signin",
 	isSignedIn: false,
+	isProfileOpen: false,
 	user: {
 		id: "",
 		name: "",
 		email: "",
 		entries: 0,
+		age: "",
+		pet: "",
 		joined: new Date(),
 	},
 };
@@ -38,10 +43,7 @@ const particlesOpt = {
 };
 
 class App extends Component {
-	constructor() {
-		super();
-		this.state = initialState;
-	}
+	state = initialState;
 
 	resetState = () => this.setState(initialState);
 
@@ -65,13 +67,40 @@ class App extends Component {
 		this.setState({ boxes });
 	};
 
+	async componentDidMount() {
+		const token = window.sessionStorage.getItem("token");
+		if (token) {
+			try {
+				const resp = await fetch(`${API}/signin`, {
+					method: "POST",
+					headers: { Authorization: token },
+				});
+				const user = await resp.json();
+				const res = await fetch(`${API}/profile/${user.userId}`, {
+					headers: { Authorization: token },
+				});
+				const profile = await res.json();
+				this.loadUser(profile);
+				this.onRouteChange("home");
+			} catch (e) {
+				console.log(e);
+			}
+		}
+	}
+
 	onInputChange = e => this.setState({ input: e.target.value });
 
 	onButtonSubmit = () => {
+		this.setState({ boxes: [] });
+		const token = window.sessionStorage.getItem("token");
+		if (!token) return;
 		this.setState({ imageUrl: this.state.input });
 		fetch(`${API}/imageurl`, {
-			method: "post",
-			headers: { "Content-Type": "application/json" },
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: token,
+			},
 			body: JSON.stringify({ input: this.state.input }),
 		})
 			.then(resp => resp.json())
@@ -79,7 +108,10 @@ class App extends Component {
 				if (resp)
 					fetch(`${API}/image`, {
 						method: "PUT",
-						headers: { "Content-Type": "application/json" },
+						headers: {
+							"Content-Type": "application/json",
+							Authorization: token,
+						},
 						body: JSON.stringify({ id: this.state.user.id }),
 					})
 						.then(response => response.json())
@@ -103,16 +135,31 @@ class App extends Component {
 		this.setState({ route });
 	};
 
+	toggleModal = () =>
+		this.setState(prevState => ({ isProfileOpen: !prevState.isProfileOpen }));
+
 	render() {
-		const { isSignedIn, boxes, imageUrl, route, user } = this.state;
+		const { isSignedIn, boxes, imageUrl, route, user, isProfileOpen } =
+			this.state;
 		return (
 			<div className="App">
 				<Particles className="particles" params={particlesOpt} />
 				<Navigation
+					toggleModal={this.toggleModal}
 					resetState={this.resetState}
 					isSignedIn={isSignedIn}
 					onRouteChange={this.onRouteChange}
 				/>
+				{isProfileOpen && (
+					<Modal>
+						<Profile
+							loadUser={this.loadUser}
+							user={user}
+							isProfileOpen={isProfileOpen}
+							toggleModal={this.toggleModal}
+						/>
+					</Modal>
+				)}
 				{route === "home" ? (
 					<div>
 						<Logo />

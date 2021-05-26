@@ -1,17 +1,15 @@
 import React from "react";
 import { Component } from "react";
 import { API } from "../../backend";
+import "./signin.css";
 
 class Signin extends Component {
-	constructor(props) {
-		super(props);
-		this.state = {
-			signInEmail: "",
-			signInPassword: "",
-			error: "",
-			loading: false,
-		};
-	}
+	state = {
+		signInEmail: "",
+		signInPassword: "",
+		error: "",
+		loading: false,
+	};
 
 	onEmailChange = e => this.setState({ signInEmail: e.target.value });
 	onPasswordChange = e => this.setState({ signInPassword: e.target.value });
@@ -28,14 +26,24 @@ class Signin extends Component {
 			}),
 		})
 			.then(resp => resp.json())
-			.then(data => {
-				if (data.id) {
-					this.props.loadUser(data);
-					this.props.onRouteChange("home");
-				}
-				if (data.error) this.setState({ error: data.error });
+			.then(async data => {
+				if (data.success) {
+					try {
+						window.sessionStorage.setItem("token", data.token);
+						const response = await fetch(`${API}/profile/${data.userId}`, {
+							headers: { Authorization: data.token },
+						});
+						const user = await response.json();
+						this.props.loadUser(user);
+						this.props.onRouteChange("home");
+					} catch (e) {
+						console.log(e);
+						this.setState({ error: "Cannot get user profile." });
+					}
+				} else this.setState({ error: data.error });
 				this.setState({ loading: false });
-			});
+			})
+			.catch(console.log);
 	};
 
 	render() {
@@ -51,7 +59,7 @@ class Signin extends Component {
 								</label>
 								<input
 									onChange={this.onEmailChange}
-									className="pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+									className="pa2 hover-black input-reset ba bg-transparent hover-bg-black hover-white w-100"
 									type="email"
 									name="email-address"
 									id="email-address"
@@ -63,7 +71,7 @@ class Signin extends Component {
 								</label>
 								<input
 									onChange={this.onPasswordChange}
-									className="b pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
+									className="b hover-black pa2 input-reset ba bg-transparent hover-bg-black hover-white w-100"
 									type="password"
 									name="password"
 									id="password"
