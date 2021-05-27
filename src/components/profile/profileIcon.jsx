@@ -51,6 +51,7 @@ class ProfileIcon extends Component {
 							});
 							const signedOut = await resp.json();
 							if (signedOut) {
+								window.sessionStorage.removeItem("token");
 								this.props.onRouteChange("signout");
 								this.props.resetState();
 							}
