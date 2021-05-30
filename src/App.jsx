@@ -11,6 +11,19 @@ import Signin from "./components/signin/signin";
 import Modal from "./components/modal/modal";
 import { API } from "./backend";
 import Profile from "./components/profile/profile";
+import { connect } from "react-redux";
+import { setUser } from "./actions";
+
+const mapStateToProps = state => ({
+	user: state.user,
+});
+
+const mapDispatchToProps = dispatch => ({
+	loadUser: user => {
+		console.log("mdtp- ", user);
+		dispatch(setUser(user));
+	},
+});
 
 const initialState = {
 	input: "",
@@ -19,15 +32,16 @@ const initialState = {
 	route: "signin",
 	isSignedIn: false,
 	isProfileOpen: false,
-	user: {
-		id: "",
-		name: "",
-		email: "",
-		entries: 0,
-		age: "",
-		pet: "",
-		joined: new Date(),
-	},
+	user: {},
+	// user: {
+	// 	id: "",
+	// 	name: "",
+	// 	email: "",
+	// 	entries: 0,
+	// 	age: "",
+	// 	pet: "",
+	// 	joined: new Date(),
+	// },
 };
 
 const particlesOpt = {
@@ -47,7 +61,7 @@ class App extends Component {
 
 	resetState = () => this.setState(initialState);
 
-	loadUser = user => this.setState({ user });
+	// loadUser = user => this.setState({ user });
 
 	calculateFaceLocation = face => {
 		const image = document.getElementById("inputimage");
@@ -80,7 +94,7 @@ class App extends Component {
 					headers: { Authorization: token },
 				});
 				const profile = await res.json();
-				this.loadUser(profile);
+				this.props.loadUser(profile);
 				this.onRouteChange("home");
 			} catch (e) {
 				console.log(e);
@@ -153,7 +167,7 @@ class App extends Component {
 				{isProfileOpen && (
 					<Modal>
 						<Profile
-							loadUser={this.loadUser}
+							loadUser={this.props.loadUser}
 							user={user}
 							isProfileOpen={isProfileOpen}
 							toggleModal={this.toggleModal}
@@ -171,10 +185,13 @@ class App extends Component {
 						<FaceRecognition boxes={boxes} imageUrl={imageUrl} />
 					</div>
 				) : route === "signin" ? (
-					<Signin loadUser={this.loadUser} onRouteChange={this.onRouteChange} />
+					<Signin
+						loadUser={this.props.loadUser}
+						onRouteChange={this.onRouteChange}
+					/>
 				) : (
 					<Register
-						loadUser={this.loadUser}
+						loadUser={this.props.loadUser}
 						onRouteChange={this.onRouteChange}
 					/>
 				)}
@@ -183,4 +200,4 @@ class App extends Component {
 	}
 }
 
-export default App;
+export default connect(mapStateToProps, mapDispatchToProps)(App);
