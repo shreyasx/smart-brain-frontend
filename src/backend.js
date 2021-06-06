@@ -1,1 +1,2 @@
-export const API = "https://smart-brain-api-f7vvr.ondigitalocean.app";
+export const API = "https://shreyas-smart-brain-api.herokuapp.com";
+// export const API = "http://localhost:5000";

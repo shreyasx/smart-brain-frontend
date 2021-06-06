@@ -68,6 +68,7 @@ class App extends Component {
 	};
 
 	async componentDidMount() {
+		fetch(API);
 		const token = window.sessionStorage.getItem("token");
 		if (token) {
 			try {
