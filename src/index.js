@@ -1,14 +1,13 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom";
-import App from "./App";
-
 import "bootstrap/dist/css/bootstrap.min.css";
 import "tachyons";
 import "./index.css";
+const App = lazy(() => import("./App"));
 
 ReactDOM.render(
-	<React.StrictMode>
+	<Suspense fallback={<h1>Loading Application...</h1>}>
 		<App />
-	</React.StrictMode>,
+	</Suspense>,
 	document.getElementById("root")
 );
