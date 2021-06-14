@@ -20,7 +20,7 @@ const ImageLinkForm = ({ onInputChange, onButtonSubmit }) => {
 					navigator.clipboard.writeText(imageLink);
 					setCopied(true);
 				}}
-				class="f6 grow no-underline br-pill ba bw2 ph3 pv2 mb2 dib dark-green"
+				className="f6 grow no-underline br-pill ba bw2 ph3 pv2 mb2 dib dark-green"
 				href="#0"
 			>
 				COPY A LINK TO CLIPBOARD!
