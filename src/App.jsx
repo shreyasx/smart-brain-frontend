@@ -19,10 +19,10 @@ const initialState = {
 	route: "signin",
 	isSignedIn: false,
 	isProfileOpen: false,
+	profileImage: "",
 	user: {
 		id: "",
 		name: "",
-		email: "",
 		entries: 0,
 		age: "",
 		pet: "",
@@ -47,7 +47,21 @@ class App extends Component {
 
 	resetState = () => this.setState(initialState);
 
-	loadUser = user => this.setState({ user });
+	loadUser = async user => {
+		this.setState((prevState, prevProps) => ({ user: { ...user, image: "" } }));
+		try {
+			const token = window.sessionStorage.getItem("token");
+			const response = await fetch(`${API}/profile/photo/${user.id}`, {
+				headers: { Authorization: token },
+			});
+			const image = await response.json();
+			this.setState((prevState, props) => ({
+				user: { ...prevState.user, image: image.image },
+			}));
+		} catch (e) {
+			console.log(e);
+		}
+	};
 
 	calculateFaceLocation = face => {
 		const image = document.getElementById("inputimage");
@@ -68,7 +82,6 @@ class App extends Component {
 	};
 
 	async componentDidMount() {
-		fetch(API);
 		const token = window.sessionStorage.getItem("token");
 		if (token) {
 			try {
@@ -146,6 +159,7 @@ class App extends Component {
 			<div className="App">
 				<Particles className="particles" params={particlesOpt} />
 				<Navigation
+					image={this.state.user.image}
 					toggleModal={this.toggleModal}
 					resetState={this.resetState}
 					isSignedIn={isSignedIn}

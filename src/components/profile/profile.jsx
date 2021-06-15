@@ -2,16 +2,20 @@ import React, { useState } from "react";
 import "./profile.css";
 import { API } from "../../backend";
 import profile from "./profile.jpg";
+import Spinner from "./spinner";
 
 const Profile = ({ user, toggleModal, loadUser }) => {
 	const [values, setValues] = useState({
 		name: user.name,
 		pet: user.pet,
 		age: user.age,
-		image: null,
+		image: user.image,
+		loading: false,
+		error: false,
 	});
 
 	const onFormChange = event => {
+		setValues({ ...values, error: false });
 		switch (event.target.name) {
 			case "user-name":
 				setValues({ ...values, name: event.target.value });
@@ -30,30 +34,33 @@ const Profile = ({ user, toggleModal, loadUser }) => {
 	const onProfileUpdate = async () => {
 		const token = window.sessionStorage.getItem("token");
 		if (!token) return;
-		var formData = new FormData();
-		formData.append("name", values.name);
-		formData.append("age", values.age);
-		formData.append("pet", values.pet);
-		formData.append("image", values.image);
-		console.log(
-			formData.get("name"),
-			formData.get("age"),
-			formData.get("pet"),
-			formData.get("image")
-		);
-		const response = await fetch(`${API}/profile/${user.id}`, {
+		setValues({ ...values, loading: true });
+		const { name, age, pet, image } = values;
+		if (name === "" || pet === "" || age === "") {
+			setValues({
+				...values,
+				error: true,
+				name: user.name,
+				pet: user.pet,
+				age: user.age,
+			});
+			return;
+		}
+		const body = JSON.stringify({ name, age, pet, image });
+		const resp = await fetch(`${API}/profile/${user.id}`, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
+				Accept: "application/json",
 				Authorization: token,
 			},
-			body: JSON.stringify(formData),
+			body,
 		});
-		const boo = await response.json();
-		console.log(boo);
-		if (response.status === 200 || response.status === 304) {
-			const user = boo;
-			loadUser(user);
+		const response = await resp.json();
+		setValues({ ...values, loading: false });
+		console.log(response);
+		if (resp.status === 200 || resp.status === 304) {
+			loadUser(response);
 			toggleModal();
 		}
 	};
@@ -63,7 +70,7 @@ const Profile = ({ user, toggleModal, loadUser }) => {
 			<article className="br3 ba b--black-10 mv4 w-100 w-50-m w-25-l mw6 shadow-5 bg-white center">
 				<main className="pa4 black-80 w-80">
 					<img
-						src={profile}
+						src={user.image === "" ? profile : user.image}
 						className="h3 w3 dib"
 						style={{ margin: "20px", cursor: "pointer" }}
 						alt="avatar"
@@ -86,11 +93,35 @@ const Profile = ({ user, toggleModal, loadUser }) => {
 							name="profilePic"
 							id="profile_pic"
 							onChange={event => {
-								if (event.target.files[0])
-									setValues({ ...values, image: event.target.files[0] });
+								setValues({ ...values, loading: true, error: false });
+								if (
+									!event.target.files[0] ||
+									event.target.files[0].size > 500 * 1024
+								) {
+									event.target.value = null;
+									setValues({ ...values, error: true, loading: false });
+									return;
+								}
+								let reader = new FileReader();
+								reader.readAsDataURL(event.target.files[0]);
+								reader.onload = () => {
+									setValues({
+										...values,
+										image: reader.result,
+										loading: false,
+										error: false,
+									});
+									console.log(values);
+								};
 							}}
 						/>
 					</form>
+					{values.error && (
+						<p style={{ color: "red" }}>
+							Name, Age and Pet cannot be empty, and image must be less than 500
+							KB.
+						</p>
+					)}
 					<label className="mt2 fw6" htmlFor="user-name">
 						Name:
 					</label>
@@ -129,26 +160,34 @@ const Profile = ({ user, toggleModal, loadUser }) => {
 						className="mt4"
 						style={{ display: "flex", justifyContent: "space-evenly" }}
 					>
-						<button
-							onClick={e => {
-								e.preventDefault();
-								onProfileUpdate();
-							}}
-							className="b pa2 grow pointer hover-white w-40 bg-light-blue b--black-20"
-						>
-							Save
-						</button>
-						<button
-							onClick={toggleModal}
-							className="b pa2 grow pointer hover-white w-40 bg-light-red b--black-20"
-						>
-							Cancel
-						</button>
+						{values.loading ? (
+							<Spinner />
+						) : (
+							<button
+								onClick={e => {
+									e.preventDefault();
+									onProfileUpdate();
+								}}
+								className="b pa2 grow pointer hover-white w-40 bg-light-blue b--black-20"
+							>
+								Save
+							</button>
+						)}
+						{!values.loading && (
+							<button
+								onClick={toggleModal}
+								className="b pa2 grow pointer hover-white w-40 bg-light-red b--black-20"
+							>
+								Cancel
+							</button>
+						)}
 					</div>
 				</main>
-				<div className="modal-close" onClick={toggleModal}>
-					&times;
-				</div>
+				{!values.loading && (
+					<div className="modal-close" onClick={toggleModal}>
+						&times;
+					</div>
+				)}
 			</article>
 		</div>
 	);

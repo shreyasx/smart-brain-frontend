@@ -17,6 +17,7 @@ class ProfileIcon extends Component {
 	};
 
 	render() {
+		const { image } = this.props;
 		return (
 			<Dropdown isOpen={this.state.dropdownOpen} toggle={this.toggle}>
 				<DropdownToggle
@@ -26,7 +27,7 @@ class ProfileIcon extends Component {
 				>
 					<img
 						style={{ margin: "20px", cursor: "pointer" }}
-						src={profile}
+						src={image === "" ? profile : image}
 						className="br-100 h3 w3 dib"
 						alt="avatar"
 					/>
